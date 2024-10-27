@@ -2,11 +2,11 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Ponzi} from "../../src/Ponzi.sol";
+import {Pyramid} from "../../src/Pyramid.sol";
 import {Tether} from "../mock/Token.sol";
 
-contract PonziUnitTest is Test {
-    Ponzi ponzi;
+contract PyramidUnitTest is Test {
+    Pyramid pyramid;
     Tether tether;
 
     address owner = address(1);
@@ -22,39 +22,39 @@ contract PonziUnitTest is Test {
 
     function setUp() public {
         tether = new Tether();
-        ponzi = new Ponzi(address(tether), owner);
+        pyramid = new Pyramid(address(tether), owner);
     }
 
     function register(address user) public {
         tether.transfer(user, ENTRY_AMOUNT);
         vm.startPrank(user);
-        tether.approve(address(ponzi), ENTRY_AMOUNT);
-        ponzi.register(owner);
+        tether.approve(address(pyramid), ENTRY_AMOUNT);
+        pyramid.register(owner);
         vm.stopPrank();
     }
 
     function register(address user, address uplineAddress) public {
         tether.transfer(user, ENTRY_AMOUNT);
         vm.startPrank(user);
-        tether.approve(address(ponzi), ENTRY_AMOUNT);
-        ponzi.register(uplineAddress);
+        tether.approve(address(pyramid), ENTRY_AMOUNT);
+        pyramid.register(uplineAddress);
         vm.stopPrank();
     }
 
     function testRegistersUsers() public {
         register(user1);
-        vm.assertEq(ponzi.getTodayInvites(owner), 0);
-        vm.assertEq(ponzi.getUserId(user1), 1);
+        vm.assertEq(pyramid.getTodayInvites(owner), 0);
+        vm.assertEq(pyramid.getUserId(user1), 1);
         register(user2, user1);
-        vm.assertEq(ponzi.getTodayInvites(user1), 1);
-        vm.assertEq(ponzi.getUserId(user2), 2);
-        vm.assertEq(ponzi.getUserNode(user1).todayInvites, 1);
-        vm.assertEq(ponzi.getUserNode(user1).totalInvites, 1);
-        vm.assertEq(ponzi.getUserUpline(user2), user1);
-        vm.assertEq(ponzi.getTotalRegistersCount(), 2);
-        vm.assertEq(ponzi.getUsers()[0], user1);
-        vm.assertEq(ponzi.getUsers()[1], user2);
-        vm.assertEq(ponzi.getContractBalance(), 200e18);
+        vm.assertEq(pyramid.getTodayInvites(user1), 1);
+        vm.assertEq(pyramid.getUserId(user2), 2);
+        vm.assertEq(pyramid.getUserNode(user1).todayInvites, 1);
+        vm.assertEq(pyramid.getUserNode(user1).totalInvites, 1);
+        vm.assertEq(pyramid.getUserUpline(user2), user1);
+        vm.assertEq(pyramid.getTotalRegistersCount(), 2);
+        vm.assertEq(pyramid.getUsers()[0], user1);
+        vm.assertEq(pyramid.getUsers()[1], user2);
+        vm.assertEq(pyramid.getContractBalance(), 200e18);
     }
 
     function testChoosesBestInviter() public {
@@ -68,15 +68,15 @@ contract PonziUnitTest is Test {
 
         vm.warp(block.timestamp + 24 hours);
 
-        ponzi.reward_24();
+        pyramid.reward_24();
         vm.assertEq(tether.balanceOf(user1), 60e18);
-        vm.assertEq(ponzi.getTodayInvites(user1), 0);
-        vm.assertEq(ponzi.getTodayInvites(user2), 0);
-        vm.assertEq(ponzi.getTodayInvites(user3), 0);
-        vm.assertEq(ponzi.getUserNode(user1).todayInvites, 0);
-        vm.assertEq(ponzi.getUserNode(user1).totalInvites, 3);
-        vm.assertEq(ponzi.getLastDonateTime(), block.timestamp);
-        vm.assertEq(ponzi.getLastDonateAmount(), 60e18);
+        vm.assertEq(pyramid.getTodayInvites(user1), 0);
+        vm.assertEq(pyramid.getTodayInvites(user2), 0);
+        vm.assertEq(pyramid.getTodayInvites(user3), 0);
+        vm.assertEq(pyramid.getUserNode(user1).todayInvites, 0);
+        vm.assertEq(pyramid.getUserNode(user1).totalInvites, 3);
+        vm.assertEq(pyramid.getLastDonateTime(), block.timestamp);
+        vm.assertEq(pyramid.getLastDonateAmount(), 60e18);
 
         vm.assertEq(tether.balanceOf(owner), 640e18);
     }
@@ -92,13 +92,13 @@ contract PonziUnitTest is Test {
 
         vm.warp(block.timestamp + 24 hours);
 
-        ponzi.reward_24();
+        pyramid.reward_24();
         vm.assertEq(tether.balanceOf(user1), 60e18);
         vm.assertEq(tether.balanceOf(user2), 60e18);
-        vm.assertEq(ponzi.getLastWinners()[0], user1);
-        vm.assertEq(ponzi.getLastWinners()[1], user2);
-        vm.assertEq(ponzi.getTotalWinners()[0], user1);
-        vm.assertEq(ponzi.getTotalWinners()[1], user2);
+        vm.assertEq(pyramid.getLastWinners()[0], user1);
+        vm.assertEq(pyramid.getLastWinners()[1], user2);
+        vm.assertEq(pyramid.getTotalWinners()[0], user1);
+        vm.assertEq(pyramid.getTotalWinners()[1], user2);
 
         vm.assertEq(tether.balanceOf(owner), 580e18);
     }
@@ -118,18 +118,18 @@ contract PonziUnitTest is Test {
 
     function testChangesToken() public {
         vm.prank(owner);
-        ponzi.changeToken(address(20));
-        vm.assertEq(address(20), ponzi.token());
+        pyramid.changeToken(address(20));
+        vm.assertEq(address(20), pyramid.token());
     }
 
     function testTransferOwnership() public {
         vm.prank(owner);
-        ponzi.transferOwnership(user1);
+        pyramid.transferOwnership(user1);
         vm.expectRevert();
         vm.prank(owner);
-        ponzi.transferOwnership(owner);
+        pyramid.transferOwnership(owner);
         vm.prank(user1);
-        ponzi.transferOwnership(owner);
+        pyramid.transferOwnership(owner);
     }
 
     function testEmergency() public {
@@ -144,7 +144,7 @@ contract PonziUnitTest is Test {
         vm.assertEq(tether.balanceOf(user1), 0);
 
         vm.prank(owner);
-        ponzi.emergency_24();
+        pyramid.emergency_24();
         vm.assertEq(tether.balanceOf(user1), 100e18);
         vm.assertEq(tether.balanceOf(user2), 100e18);
         vm.assertEq(tether.balanceOf(user3), 100e18);

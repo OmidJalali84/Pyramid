@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract Ponzi is ReentrancyGuard {
+contract Pyramid is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct Node {
@@ -14,11 +14,11 @@ contract Ponzi is ReentrancyGuard {
         uint256 totalInvites;
     }
 
-    error Ponzi__NotValidUplineAddress();
-    error Ponzi__CanNotUseYourOwnAddress();
-    error Ponzi__AlreadyRegistered();
-    error Ponzi__OwnableUnauthorizedAccount(address account);
-    error Ponzi__RewardTimeHasntCome();
+    error Pyramid__NotValidUplineAddress();
+    error Pyramid__CanNotUseYourOwnAddress();
+    error Pyramid__AlreadyRegistered();
+    error Pyramid__OwnableUnauthorizedAccount(address account);
+    error Pyramid__RewardTimeHasntCome();
 
     event Register(address indexed newUser, address upline);
     event Reward24(address[] winners);
@@ -53,20 +53,20 @@ contract Ponzi is ReentrancyGuard {
 
     modifier onlyOwner() {
         if (owner != msg.sender) {
-            revert Ponzi__OwnableUnauthorizedAccount(msg.sender);
+            revert Pyramid__OwnableUnauthorizedAccount(msg.sender);
         }
         _;
     }
 
     function register(address uplineAddress) public nonReentrant {
         if (addressToId[uplineAddress] == 0 && uplineAddress != owner) {
-            revert Ponzi__NotValidUplineAddress();
+            revert Pyramid__NotValidUplineAddress();
         }
         if (msg.sender == uplineAddress) {
-            revert Ponzi__CanNotUseYourOwnAddress();
+            revert Pyramid__CanNotUseYourOwnAddress();
         }
         if (addressToId[msg.sender] != 0) {
-            revert Ponzi__AlreadyRegistered();
+            revert Pyramid__AlreadyRegistered();
         }
         tether.safeTransferFrom(
             msg.sender,
@@ -98,7 +98,7 @@ contract Ponzi is ReentrancyGuard {
 
     function reward_24() public nonReentrant {
         if (block.timestamp < 24 hours) {
-            revert Ponzi__RewardTimeHasntCome();
+            revert Pyramid__RewardTimeHasntCome();
         }
         uint256 todayInvitersCount = todayInviters.length;
         address[] memory tempInvitersArray = new address[](todayInvitersCount);
